@@ -1,0 +1,88 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "breathe-memory"
+version = "0.1.0"
+description = "Context optimization and associative memory for LLM applications"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Kenaz GmbH", email = "hello@kenaz.ai" }]
+keywords = ["llm", "context", "memory", "rag", "compression", "ai"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+requires-python = ">=3.11"
+dependencies = [
+    "typing-extensions>=4.0",
+]
+
+[project.optional-dependencies]
+# PostgreSQL backend for Memory Nexus
+pg = [
+    "asyncpg>=0.29",
+    "sentence-transformers>=3.0",
+    "numpy>=1.26",
+]
+
+# Apple Silicon local model extractor (MLX)
+mlx = [
+    "mlx>=0.16",
+    "mlx-lm>=0.16",
+]
+
+# Anthropic LLM client for GraphCompactor
+anthropic = [
+    "anthropic>=0.40",
+]
+
+# OpenAI LLM client for GraphCompactor
+openai = [
+    "openai>=1.0",
+]
+
+# Everything
+all = [
+    "breathe-memory[pg,anthropic]",
+]
+
+# Development
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "httpx>=0.27",
+    "ruff>=0.4",
+    "mypy>=1.10",
+]
+
+[project.urls]
+Homepage = "https://github.com/tkenaz/breathe-memory"
+Documentation = "https://github.com/tkenaz/breathe-memory#readme"
+Issues = "https://github.com/tkenaz/breathe-memory/issues"
+
+[tool.setuptools.packages.find]
+include = ["breathe*", "memory_nexus*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+ignore_missing_imports = true
