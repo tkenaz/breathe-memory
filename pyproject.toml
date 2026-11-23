@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Context optimization and associative memory for LLM applications"
 readme = "README.md"
 license = { text = "Apache-2.0" }
-authors = [{ name = "Kenaz GmbH", email = "hello@kenaz.ai" }]
+authors = [{ name = "37lab OÜ", email = "mv@37lab.ai" }]
 keywords = ["llm", "context", "memory", "rag", "compression", "ai"]
 classifiers = [
     "Development Status :: 4 - Beta",

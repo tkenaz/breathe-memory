@@ -148,6 +148,13 @@ CREATE TABLE memories (
 );
 ```
 
+**What the bundled `memory_nexus` package is.** A minimal reference store that ships
+with this library so the examples run end to end: one table, local embeddings,
+vector search. It is not the full Memory Nexus engine (hybrid search with rank
+fusion, chunking, graph expansion), which is a separate MCP server and not part
+of this package. Any backend that implements `VectorSearchClient` can take its
+place.
+
 ---
 
 ## Language support
@@ -356,6 +363,21 @@ Measured in production on Apple M2 Max:
 GraphCompactor fires infrequently (only at ~80% context fill), so its latency
 doesn't affect per-request response time.
 
+### What these numbers do and do not say
+
+The table is latency from one deployment, on one machine. It is not a retrieval
+quality benchmark, and this repository does not publish one yet.
+
+SYNAPSE retrieves by association: it finds memories connected to anchors it can
+extract from the current message. That works well when the message names the
+things it is about. It is weaker when the message itself carries no anchor, for
+example a back-reference such as "what did we decide last time?", where the topic
+lives in earlier turns. In this version anchors are extracted from the last user
+message only; preceding turns are not used. Recall therefore depends on your
+anchors, your concept graph and your vector backend. Measure it on your own conversations
+before relying on it; `BreatheMetrics` reports hit rate, which tells you how
+often something was injected, not whether it was the right thing.
+
 ---
 
 ## Memory management
@@ -373,7 +395,7 @@ messages = await synapse.inject(messages)
 
 This is intentional: memory storage policies (what to keep, when to forget, privacy rules) vary wildly between applications. BREATHE gives you the retrieval engine — you control the data.
 
-> **Coming soon:** A standalone MCP server wrapping Memory Nexus, so LLMs can store and search memories directly as tool calls.
+> To let an LLM store and search memories directly as tool calls, put an MCP server in front of your store. The bundled package does not include one.
 
 ---
 
@@ -437,4 +459,4 @@ Expose via your API: `GET /api/breathe-stats` → `BreatheMetrics.get().to_dict(
 
 Apache 2.0 — see [LICENSE](LICENSE).
 
-Built by [Kenaz GmbH](https://kenaz.ai) — Custom AI Agents, MCP Servers, Semantic Engineering.
+Built by [37lab](https://37lab.ai) (formerly Kenaz) — Custom AI Agents, MCP Servers, Semantic Engineering.
