@@ -131,6 +131,20 @@ CREATE INDEX ON memories USING ivfflat (embedding vector_cosine_ops);
 The default model (`all-MiniLM-L6-v2`, 384-dim, ~90 MB) is good for prototyping.
 For production, we recommend `intfloat/multilingual-e5-large` (1024-dim, ~1.2 GB) — significantly better retrieval quality, especially for multilingual content.
 
+Two things to know before you switch:
+
+- **Apple Silicon.** On the MPS backend, PyTorch's default attention kernel returns
+  wrong vectors for XLM-RoBERTa-based models (`multilingual-e5-*`, `bge-m3`) when a
+  short text is encoded on its own. With `multilingual-e5-large`, single texts of a
+  few words came out at a cosine of about 0.8 to the CPU result; longer texts were
+  exact. Short queries are exactly what a memory store encodes one at a time.
+  `PostgresMemoryStore` therefore loads the model with eager attention when MPS is
+  available, and falls back to CPU if the model does not support that. If you
+  embedded data on a Mac with version 0.1.0 and an XLM-RoBERTa-based model,
+  re-embed short entries. `all-MiniLM-L6-v2` was not affected in our checks.
+- **e5 prefixes.** e5 models are trained with `query: ` / `passage: ` prefixes. This
+  store does not add them, so results with e5 are below what the model can do.
+
 To switch, pass `model_name` and adjust your table's vector dimension:
 
 ```python
@@ -459,4 +473,4 @@ Expose via your API: `GET /api/breathe-stats` → `BreatheMetrics.get().to_dict(
 
 Apache 2.0 — see [LICENSE](LICENSE).
 
-Built by [37lab](https://37lab.ai) (formerly Kenaz) — Custom AI Agents, MCP Servers, Semantic Engineering.
+Built by [37lab](https://37lab.ai) — Custom AI Agents, MCP Servers, Semantic Engineering.

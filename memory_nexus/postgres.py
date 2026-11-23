@@ -46,6 +46,41 @@ logger = logging.getLogger(__name__)
 _executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="breathe-embed")
 
 
+def _mps_available() -> bool:
+    """True when sentence-transformers would place the model on Apple's MPS backend."""
+    try:
+        import torch
+        return bool(torch.backends.mps.is_available())
+    except Exception:
+        return False
+
+
+def load_embedding_model(model_name: str):
+    """
+    Load a sentence-transformer so that short texts embed correctly on every device.
+
+    On Apple's MPS backend, PyTorch's scaled-dot-product attention kernel returns
+    wrong hidden states for XLM-RoBERTa-based models (multilingual-e5, bge-m3) when
+    a short sequence is encoded on its own; the same text inside a longer batch is
+    correct, which hides the problem. Eager attention is exact on MPS, so it is
+    requested whenever MPS is available. Models that reject the option are loaded
+    on CPU instead: slower, but correct.
+    """
+    from sentence_transformers import SentenceTransformer
+
+    if not _mps_available():
+        return SentenceTransformer(model_name)
+    try:
+        return SentenceTransformer(
+            model_name, model_kwargs={"attn_implementation": "eager"}
+        )
+    except (TypeError, ValueError) as e:
+        logger.warning(
+            f"{model_name} does not accept eager attention ({e}); loading on CPU"
+        )
+        return SentenceTransformer(model_name, device="cpu")
+
+
 class PostgresMemoryStore(MemoryStore):
     """
     asyncpg + pgvector memory store with sentence-transformer embeddings.
@@ -112,8 +147,7 @@ class PostgresMemoryStore(MemoryStore):
         """Lazy-load embedding model."""
         if self._model is None:
             try:
-                from sentence_transformers import SentenceTransformer
-                self._model = SentenceTransformer(self._model_name)
+                self._model = load_embedding_model(self._model_name)
             except ImportError as e:
                 raise ImportError(
                     "sentence-transformers is required. "
